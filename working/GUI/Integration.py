@@ -36,10 +36,10 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
         def setupUi(self, Form):
             Form.setObjectName("Form")
             Form.resize(250, 125)
-            Form.setStyleSheet("background-color : rgb(240,255,240)")
+            Form.setStyleSheet("background-color : rgb(224,244,253)")
             Form.setWindowFlag(QtCore.Qt.FramelessWindowHint)
             self.Label = QtWidgets.QLabel(Form)
-            self.Label.setGeometry(QtCore.QRect(30, 40, 151, 41))
+            self.Label.setGeometry(QtCore.QRect(50, 40, 151, 41))
             font = QtGui.QFont()
             font.setFamily("에스코어 드림 6 Bold")
             font.setPointSize(24)
@@ -47,13 +47,13 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             font.setWeight(75)
             self.Label.setFont(font)
             self.Label.setObjectName("label")
-            self.Label_2 = QtWidgets.QLabel(Form)
-            self.Label_2.setGeometry(QtCore.QRect(170, 25, 71, 71))
-            # set qmovie as label
-            self.movie = QtGui.QMovie("Image/loading.gif")
-            self.Label_2.setMovie(self.movie)
-            self.Label_2.setScaledContents(True)
-            self.movie.start()
+            # self.Label_2 = QtWidgets.QLabel(Form)
+            # self.Label_2.setGeometry(QtCore.QRect(170, 25, 71, 71))
+            # # set qmovie as label
+            # self.movie = QtGui.QMovie("Image/loading.gif")
+            # self.Label_2.setMovie(self.movie)
+            # self.Label_2.setScaledContents(True)
+            # self.movie.start()
 
             self.retranslateUi(Form)
             QtCore.QMetaObject.connectSlotsByName(Form)
@@ -62,6 +62,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             _translate = QtCore.QCoreApplication.translate
             Form.setWindowTitle(_translate("Form", "Form"))
             self.Label.setText(_translate("Form", "로딩 중..."))
+
     try :
         ard = serial.Serial('COM4', 115200)
         is_connect = 1
@@ -269,6 +270,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
         def __init__(self):
             super().__init__()
             self.bool_state = True
+            self.det_time = time.time()
 
         @pyqtSlot(bool)
         def new_bool_state(self, new_bool_state):
@@ -279,10 +281,10 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             cap = self.capture
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            cap.set(cv2.CAP_PROP_FPS, int(10))
+            # cap.set(cv2.CAP_PROP_FPS, int(10))
             hands = mp_hands.Hands(max_num_hands=6, min_detection_confidence=0.7, min_tracking_confidence=0.8)
             prevTime = 0
-            command_status = 2
+            command_status = 3
             gesture_list = []
             while self.bool_state and cap.isOpened():
                 success, image = cap.read()
@@ -304,6 +306,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 handedness_list = []
+                det_duration = time.time() - self.det_time
                 if results.multi_hand_landmarks:
                     mark_p_list = []
                     size_list = []
@@ -317,6 +320,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                             mark_p.append(Mark_pixel(normalized_list[i], normalized_list[i+1], normalized_list[i+2]))
                         mark_p_list.append(mark_p)
                     if len(mark_p_list) >= 2:
+                        self.det_time = time.time()
                         idx1 = size_list.index(max(size_list))
                         size_list[idx1] = -10
                         idx2 = size_list.index(max(size_list))
@@ -354,20 +358,22 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                             #     gesture_list.append(2)
                             # else:
                             #     gesture_list.append(3)
+
                             if gesture_list == [0,0,0,0,0] :
                                 command_status = 0
                             elif gesture_list == [1,1,1,1,1]:
                                 command_status = 1
                             elif gesture_list == [2,2,2,2,2]:
                                 command_status = 2
-                                cv2.putText(image, 'STOP', (30, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, 1)
-                                try:
-                                    ard.write(b'S')
-                                    self.is_connect.emit(1)
-                                except:
-                                    self.is_connect.emit(0)
+                                # cv2.putText(image, 'STOP', (30, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, 1)
+                                # try:
+                                #     ard.write(b'S')
+                                #     self.is_connect.emit(1)
+                                # except:
+                                #     self.is_connect.emit(0)
                             else :
                                 pass
+
                             if len(gesture_list) == 5 :
                                 del gesture_list[0]
                             else:
@@ -393,10 +399,21 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                         self.is_connect.emit(1)
                     except:
                         self.is_connect.emit(0)
+                elif command_status == 2 :
+                    cv2.putText(image, 'STOP', (30, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, 1)
+                    try:
+                        ard.write(b'S')
+                        self.is_connect.emit(1)
+                    except:
+                        self.is_connect.emit(0)
+                    command_status = 3
                 else :
-                    pass
+                    self.is_connect.emit(1)
                 cv2.putText(image, "FPS : %0.1f" % fps, (450, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, 1)
-                self.change_pixmap_signal.emit(image)
+                if det_duration > 60 :
+                    self.change_pixmap_signal.emit(cv2.cvtColor(cv2.imread('Image/wating_screen.png'), cv2.COLOR_BGR2RGB))
+                else :
+                    self.change_pixmap_signal.emit(image)
                 if cv2.waitKey(5) & 0xFF == 27:
                     break
             try:
@@ -404,7 +421,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                 self.is_connect.emit(1)
             except:
                 self.is_connect.emit(0)
-            self.change_pixmap_signal.emit(cv2.cvtColor(cv2.imread('Image/Inbody.png'), cv2.COLOR_BGR2RGB))
+            self.change_pixmap_signal.emit(cv2.cvtColor(cv2.imread('Image/Inbody_2.jpg'), cv2.COLOR_BGR2RGB))
             hands.close()
             self.capture.release()
 
@@ -417,56 +434,58 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             # self.layout.removeWidget(lambda : self.Form)
             MainWindow.setObjectName("MainWindow")
             MainWindow.resize(1600, 900)
-            MainWindow.setStyleSheet("background-color: rgb(240, 255, 240);")
+            MainWindow.setStyleSheet("background-color: rgb(224, 244, 253);")
             self.Mywindow = MyWindow()
             self.centralwidget = QtWidgets.QWidget(MainWindow)
             self.centralwidget.setObjectName("centralwidget")
             self.frame = QtWidgets.QFrame(self.centralwidget)
-            self.frame.setGeometry(QtCore.QRect(30,50,1240,750))
-            self.frame.setStyleSheet('background-color : #f7f0ff')
+            self.frame.setGeometry(QtCore.QRect(50,50,1240,750))
+            self.frame.setStyleSheet('background-color : rgb(18,143,143)') #f7f0ff
             self.label = QtWidgets.QLabel(self.frame)
             self.label.setGeometry(QtCore.QRect(120, 0, 1000, 750))
             self.label.setObjectName("label")
             self.label.setPixmap(QtGui.QPixmap('Image/Inbody.png'))
             self.label.setScaledContents(True)
             self.label_3 = QtWidgets.QLabel(self.centralwidget)
-            self.label_3.setGeometry(QtCore.QRect(1320,40,220,40))
+            self.label_3.setGeometry(QtCore.QRect(1340,40,220,40))
             self.label_3.setObjectName("label_3")
             self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
-            self.groupBox.setGeometry(QtCore.QRect(1320, 245, 220, 375))
+            self.groupBox.setGeometry(QtCore.QRect(1340, 245, 220, 375))
             self.groupBox.setAlignment(QtCore.Qt.AlignCenter)
             self.groupBox.setObjectName("groupBox")
             self.pushButton = QtWidgets.QPushButton(self.groupBox)
-            self.pushButton.setGeometry(QtCore.QRect(22, 21, 157, 157))
+            self.pushButton.setGeometry(QtCore.QRect(32, 21, 157, 157))
             self.pushButton.setAutoFillBackground(False)
             self.pushButton.setText("")
             self.pushButton.setStyleSheet("border-radius : 78; border : 2px solid white")
             self.pushButton.setStyleSheet(
                 '''
-                QPushButton{image:url(./Image/Increase.png); border:0px;}
-                QPushButton:checked{image:url(./Image/Increase_checked.png); border:0px;}
+                QPushButton{image:url(./Image/Increase_2.png); border:0px;}
+                QPushButton:hover{image:url(./Image/Increase_2_hover.png); border:0px;}
+                QPushButton:checked{image:url(./Image/Increase_2_checked.png); border:0px;}
                 ''')
             self.pushButton.setCheckable(True)
             self.pushButton.setObjectName("pushButton")
             self.pushButton.setEnabled(False)
             self.pushButton_2 = QtWidgets.QPushButton(self.groupBox)
-            self.pushButton_2.setGeometry(QtCore.QRect(22, 199, 157, 157))
+            self.pushButton_2.setGeometry(QtCore.QRect(32, 199, 157, 157))
             self.pushButton_2.setText("")
             self.pushButton_2.setStyleSheet("border-radius : 78; border : 2px solid white")
             self.pushButton_2.setStyleSheet(
                 '''
-                QPushButton{image:url(./Image/Decrease.png); border:0px;}
-                QPushButton:checked{image:url(./Image/Decrease_checked.png); border:0px;}
+                QPushButton{image:url(./Image/Decrease_2.png); border:0px;}
+                QPushButton:hover{image:url(./Image/Decrease_2_hover.png); border:0px;}
+                QPushButton:checked{image:url(./Image/Decrease_2_checked.png); border:0px;}
                 ''')
             self.pushButton_2.setCheckable(True)
             self.pushButton_2.setObjectName("pushButton_2")
             self.pushButton_2.setEnabled(False)
             self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
-            self.checkBox.setGeometry(QtCore.QRect(1320, 190, 220, 34))
+            self.checkBox.setGeometry(QtCore.QRect(1340, 190, 220, 34))
             self.checkBox.setObjectName("checkBox")
             self.checkBox.setCheckState(False)
             self.groupBox_2 = QtWidgets.QGroupBox(self.centralwidget)
-            self.groupBox_2.setGeometry(QtCore.QRect(1320, 640, 220, 157))
+            self.groupBox_2.setGeometry(QtCore.QRect(1340, 640, 220, 157))
             self.groupBox_2.setAlignment(QtCore.Qt.AlignCenter)
             self.groupBox_2.setObjectName("groupBox_2")
             self.pushButton_3 = QtWidgets.QPushButton(self.groupBox_2)
@@ -475,8 +494,8 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.pushButton_3.setStyleSheet("border-radius : 47; border : 2px solid white")
             self.pushButton_3.setStyleSheet(
                 '''
-                QPushButton{image:url(./Image/refresh.png); border:0px;}
-                QPushButton:hover{image:url(./Image/refresh_checked.png); border:0px;}
+                QPushButton{image:url(./Image/refresh_2.png); border:0px;}
+                QPushButton:hover{image:url(./Image/refresh_2_hover.png); border:0px;}
                 ''')
             self.pushButton_3.setObjectName("pushButton_3")
             self.pushButton_4 = QtWidgets.QPushButton(self.groupBox_2)
@@ -485,12 +504,12 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.pushButton_4.setStyleSheet("border-radius : 47; border : 2px solid white")
             self.pushButton_4.setStyleSheet(
                 '''
-                QPushButton{image:url(./Image/power.png); border:0px;}
-                QPushButton:hover{image:url(./Image/power_checked.png); border:0px;}
+                QPushButton{image:url(./Image/power_2.png); border:0px;}
+                QPushButton:hover{image:url(./Image/power_2_hover.png); border:0px;}
                 ''')
             self.pushButton_4.setObjectName("pushButton_4")
             self.label_2 = QtWidgets.QLabel(self.centralwidget)
-            self.label_2.setGeometry(QtCore.QRect(1320, 100, 220, 70))
+            self.label_2.setGeometry(QtCore.QRect(1340, 100, 220, 70))
             self.label_2.setText("")
             self.label_2.setPixmap(QtGui.QPixmap("./Image/인바디.png"))
             self.label_2.setScaledContents(True)
@@ -618,7 +637,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
     class MyWindow(QtWidgets.QMainWindow):
         def __init__(self):
             super().__init__()
-            self.setStyleSheet('''QMessageBox{background-color: rgb(225, 225, 225);}''')
+            self.setStyleSheet('''QMessageBox{background-color: rgb(224, 244, 253);}''')
             self.setStyleSheet('''QMainWindow{background-color : rgb(0, 0, 0);}''')
             self.msg = QMessageBox()
         def closeEvent(self, event):
@@ -635,7 +654,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
         def setupUi(self, Dialog):
             Dialog.setObjectName("Dialog")
             Dialog.resize(800, 502)
-            Dialog.setStyleSheet("background-color : rgb(240,255,240)")
+            Dialog.setStyleSheet("background-color : rgb(224, 244, 253)")
             self.label = QtWidgets.QLabel(Dialog)
             self.label.setGeometry(QtCore.QRect(175, 20, 450, 60))
             font = QtGui.QFont()
@@ -671,9 +690,9 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.label_3.setFont(font)
             self.label_3.setObjectName("label_3")
             self.label_4 = QtWidgets.QLabel(Dialog)
-            self.label_4.setGeometry(QtCore.QRect(40, 160, 336, 316))
+            self.label_4.setGeometry(QtCore.QRect(20, 180, 356, 270))
             self.label_4.setText("")
-            self.label_4.setPixmap(QtGui.QPixmap("Image/guide_3.png"))
+            self.label_4.setPixmap(QtGui.QPixmap("Image/guide_4.png"))
             self.label_4.setScaledContents(True)
             self.label_4.setObjectName("label_4")
             self.label_5 = QtWidgets.QLabel(Dialog)
