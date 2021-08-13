@@ -483,10 +483,19 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.frame_3.setGeometry(QtCore.QRect(0, 0, 381, 350))
             self.frame_3.setStyleSheet("background-color : #ECECEC")
 
-            # self.label_3 = QtWidgets.QLabel(self.frame_3)
-            # self.label_3.setGeometry(QtCore.QRect(50, 50, 280, 250))
-            # self.label_3.setStyleSheet("background-color : #ECECEC")
-            # self.label_3.setObjectName("label_3")
+            self.label_3 = QtWidgets.QLabel(self.frame_3)
+            self.label_3.setGeometry(QtCore.QRect(10, 20, 360, 20))
+            self.label_3.setObjectName("label_3")
+
+            self.label_5 = QtWidgets.QLabel(self.frame_3)
+            self.label_5.setGeometry(QtCore.QRect(10, 50, 360, 20))
+            self.label_5.setObjectName("label_5")
+
+            self.label_6 = QtWidgets.QLabel(self.frame_3)
+            self.label_6.setGeometry(QtCore.QRect(60, 85, 270, 250))
+            self.label_6.setObjectName("label_5")
+            self.label_6.setPixmap(QtGui.QPixmap("Image/guide.PNG"))
+            self.label_6.setScaledContents(True)
 
             self.stackedWidget.addWidget(self.page)
             self.page_2 = QtWidgets.QWidget()
@@ -614,6 +623,20 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.label_4.setFont(font)
             self.label_4.setText(_translate("MainWindow", "버튼을 터치해 침대 경사를 조절해보세요!"))
             self.label_4.setAlignment(QtCore.Qt.AlignCenter)
+
+            font_2 = QtGui.QFont()
+            font_2.setFamily("에스코어 드림 6 Bold")
+            font_2.setPointSize(16)
+            font_2.setBold(True)
+            font_2.setWeight(75)
+
+            self.label_3.setFont(font_2)
+            self.label_3.setText(_translate("MainWindow", "아래의 제스처 조합을 취해"))
+            self.label_3.setAlignment(QtCore.Qt.AlignCenter)
+
+            self.label_5.setFont(font_2)
+            self.label_5.setText(_translate("MainWindow", "침대 기울기를 조절해보세요."))
+            self.label_5.setAlignment(QtCore.Qt.AlignCenter)
 
         def rebooting(self):
             result = self.msg.question(self,
