@@ -23,6 +23,9 @@ mp_face_detection = mp.solutions.face_detection
 import pandas as pd
 
 def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
+    """
+    opencv, GUI, arduino 돌리는 메인 프로세스
+    """
     class Loading(object):
         def setupUi(self, Form):
             Form.setObjectName("Form")
@@ -214,7 +217,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             super().__init__()
             self.control_direction = 2 # default는 멈춤
 
-        @pyqtSlot(int)
+        @pyqtSlot(int) # increase_or_decrease
         def new_control_direction(self, new_control_direction):
             self.control_direction = new_control_direction
 
@@ -328,7 +331,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                             left_or_right = len(handedness_list[i])
                             orthogonality = z_orthogonality_list[i]
                             prediction_list.pop(i)
-                            if (left_or_right == 4 and orthogonality > 0.4) or (left_or_right == 5 and orthogonality < -0.4):
+                            if (left_or_right == 4 and orthogonality > 0.2) or (left_or_right == 5 and orthogonality < -0.2):
                                 if prediction_list == [0]:
                                     gesture_list.append(0)
                                 elif prediction_list == [1]:
@@ -347,11 +350,11 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                             #     gesture_list.append(3)
 
                             if gesture_list == [0,0,0,0,0] :
-                                command_status = 0
+                                command_status = 0 # 경사 증가
                             elif gesture_list == [1,1,1,1,1]:
-                                command_status = 1
+                                command_status = 1 # 경사 하강
                             elif gesture_list == [2,2,2,2,2]:
-                                command_status = 2
+                                command_status = 2 # 멈춤
                                 # cv2.putText(image, 'STOP', (30, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, 1)
                                 # try:
                                 #     ard.write(b'S')
@@ -543,18 +546,18 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             self.stackedWidget.addWidget(self.page_2)
 
             self.pushButton_6 = QtWidgets.QPushButton(self.frame_2)
-            self.pushButton_6.setGeometry(QtCore.QRect(60, 710, 101, 101))
+            self.pushButton_6.setGeometry(QtCore.QRect(40, 710, 101, 101))
             self.pushButton_6.setObjectName("pushButton_6")
             self.pushButton_6.setStyleSheet("border-radius : 10;")
             self.pushButton_6.setStyleSheet(
                 '''
                 QPushButton{image:url(./Image/refresh.png); border:0px;}
                 QPushButton:hover{image:url(./Image/refresh_hover.png); border:0px;}
-                QPushButton:disabled{image:url(./Image/refresh_inactivation_3.png); border:0px;}
+                QPushButton:disabled{image:url(); border:0px;}
                 ''')
 
             self.pushButton_7 = QtWidgets.QPushButton(self.frame_2)
-            self.pushButton_7.setGeometry(QtCore.QRect(190, 710, 101, 101))
+            self.pushButton_7.setGeometry(QtCore.QRect(180, 710, 101, 101))
             self.pushButton_7.setObjectName("pushButton_7")
 
             self.pushButton_7.setStyleSheet("border-radius : 10;")
@@ -565,7 +568,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
                 ''')
 
             self.pushButton_8 = QtWidgets.QPushButton(self.frame_2)
-            self.pushButton_8.setGeometry(QtCore.QRect(310, 740, 71, 71))
+            self.pushButton_8.setGeometry(QtCore.QRect(320, 710, 101, 101))
             self.pushButton_8.setObjectName("pushButton_8")
             self.pushButton_8.setStyleSheet("border-radius : 10;")
             self.pushButton_8.setStyleSheet(
@@ -716,16 +719,16 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             if self.pushButton_5.isChecked():
                 self.pushButton_5.toggle()
             if self.pushButton_3.isChecked():
-                self.increase_or_decrease.emit(0)
+                self.increase_or_decrease.emit(0) # 경사 오름
             else:
-                self.increase_or_decrease.emit(2)
+                self.increase_or_decrease.emit(2) # 멈춰라
 
         def stop_clicked(self, MainWindow):
             if self.pushButton_3.isChecked():
                 self.pushButton_3.toggle()
             if self.pushButton_5.isChecked():
                 self.pushButton_5.toggle()
-            self.increase_or_decrease.emit(2)
+            self.increase_or_decrease.emit(2) # 멈춰라
 
         def down_clicked(self, MainWindow):
             if self.pushButton_4.isChecked():
@@ -733,14 +736,14 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             if self.pushButton_3.isChecked():
                 self.pushButton_3.toggle()
             if self.pushButton_5.isChecked():
-                self.increase_or_decrease.emit(1)
+                self.increase_or_decrease.emit(1) # 경사 내림
             else:
-                self.increase_or_decrease.emit(2)
+                self.increase_or_decrease.emit(2) # 멈춰라
 
-        def to_guide_window(self):
+        def to_guide_window(self): # 가이드 윈도우를 열어라
             self.Dialog.show()
 
-    class MyWindow(QtWidgets.QMainWindow):
+    class MyWindow(QtWidgets.QMainWindow): # 프로그램 종료
         def __init__(self):
             super().__init__()
             self.setStyleSheet('''QMessageBox{background-color: rgb(224, 244, 253);}''')
@@ -757,7 +760,7 @@ def cv_gui_arduino(p_list, maximum, p_list_2, maximum_2):
             else :
                 pass
 
-    class Ui_Dialog(object):
+    class Ui_Dialog(object): # 가이드 윈도우
         def setupUi(self, Dialog):
             Dialog.setObjectName("Dialog")
             Dialog.resize(800, 700)
